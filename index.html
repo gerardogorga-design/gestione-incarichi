@@ -426,32 +426,6 @@ function getSavedOp(){ return ls(OP_KEY); }
 function saveOp(op){ lsSet(OP_KEY,op); }
 loadStorage();
 
-// Ripristina sessione salvata automaticamente all'avvio
-(function(){
-  var sess=loadSession();
-  if(sess&&sess.data&&sess.data.length&&sess.currentOp){
-    S.data=sess.data;
-    S.fileName=sess.fileName||"";
-    S.operatorList=sess.operatorList||[];
-    if(sess.done)DONE=sess.done;
-    if(sess.listaTab)S.listaTab=sess.listaTab;
-    // Mostra banner di ripristino
-    setTimeout(function(){
-      showScreen("screen-main");
-      var isAdmin=(sess.currentOp==="__admin__");
-      S.currentOp=sess.currentOp;
-      document.getElementById("h-op").textContent=isAdmin?"Admin":sess.currentOp;
-      document.getElementById("tab-dash").style.display=isAdmin?"":"none";
-      document.getElementById("btn-newfile").style.display=isAdmin?"":"none";
-      rebuildOpFilter();
-      document.getElementById("banner").style.display="flex";
-      document.getElementById("banner-txt").innerHTML="Sessione ripristinata — <strong>"+S.data.length.toLocaleString("it")+" incarichi</strong> caricati.&nbsp;&nbsp;<button onclick='clearSession();location.reload()' style='background:none;border:none;color:#533AB7;cursor:pointer;font-size:13px;text-decoration:underline'>Ricomincia da capo</button>";
-      if(isAdmin){S.listaTab=S.listaTab||"__admin__";switchView("dashboard");}
-      else{S.listaTab=S.listaTab||sess.currentOp;switchView("lista");}
-    },0);
-  }
-})();
-
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 function daysSince(v){if(!v)return 999;var d=typeof v==="number"?new Date(Math.round((v-25569)*864e5)):new Date(v);if(isNaN(d.getTime()))return 999;return Math.floor((Date.now()-d.getTime())/864e5);}
 function fmtDate(v){if(!v)return"—";var d=typeof v==="number"?new Date(Math.round((v-25569)*864e5)):new Date(v);if(isNaN(d.getTime()))return String(v);return d.toLocaleDateString("it-IT");}
@@ -480,32 +454,10 @@ function markDone(id){
 function unmarkDone(id){delete DONE[id];if(S.view==="lavorati")renderLavorati();else if(S.view==="lista")renderLista();else renderDash();}
 
 // ─── SESSION ──────────────────────────────────────────────────────────────────
-function saveSession(){
-  lsSet(SESSION_KEY,JSON.stringify({
-    currentOp:S.currentOp,
-    operatorList:S.operatorList,
-    done:DONE,
-    view:S.view,
-    listaTab:S.listaTab,
-    data:S.data,
-    fileName:S.fileName,
-  }));
-}
+function saveSession(){ lsSet(SESSION_KEY,JSON.stringify({currentOp:S.currentOp,operatorList:S.operatorList,done:DONE,view:S.view,listaTab:S.listaTab})); }
 function loadSession(){ try{return JSON.parse(ls(SESSION_KEY)||"null");}catch(e){return null;} }
 function clearSession(){ lsDel(SESSION_KEY); }
-function restoreSession(){
-  var sess=loadSession();
-  if(!sess)return false;
-  // Se i dati non sono in memoria ma sono in sessione, ripristinali
-  if(!S.data.length&&sess.data&&sess.data.length){
-    S.data=sess.data;
-    S.fileName=sess.fileName||"";
-    S.operatorList=sess.operatorList||[];
-  }
-  if(sess.done)DONE=sess.done;
-  if(sess.listaTab)S.listaTab=sess.listaTab;
-  return true;
-}
+function restoreSession(){ var sess=loadSession();if(!sess||!S.data.length)return false;if(sess.done)DONE=sess.done;if(sess.listaTab)S.listaTab=sess.listaTab;return true; }
 
 function askSave(cb){
   if(!Object.keys(DONE).length){cb();return;}
@@ -814,71 +766,4 @@ document.getElementById("sess-discard").addEventListener("click",function(){
 });
 
 // ─── EXPORT ───────────────────────────────────────────────────────────────────
-function mkrow(r,i,inclOp){var n=NOTES[r.id]||{},row={"#":i+1,"ID":r.id,"Company":r.company||""};if(inclOp)row["Operatore"]=r.operatore||"";row["Scadenza (gg)"]=r.giorni_scadenza;row["N. Chiamate"]=r.n_chiamate||0;row["Ultima chiamata"]=fmtDate(r.data_ultima);row["Stato"]=STATUS_META[r._status]?STATUS_META[r._status].label:"";row["Motivo"]=reason(r);row["Data richiamo"]=n.dataRichiamo||"";row["Nota"]=n.testo||"";return row;}
-function expOp(op){var list=dailyList(op),ws=XLSX.utils.json_to_sheet(list.map(function(r,i){return mkrow(r,i,false);})),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,op.slice(0,31));XLSX.writeFile(wb,"lista_"+op.replace(/\s+/g,"_")+"_"+todayFile()+".xlsx");}
-function expAll(){var wb=XLSX.utils.book_new();S.operatorList.filter(Boolean).forEach(function(op){var list=dailyList(op),ws=XLSX.utils.json_to_sheet(list.length?list.map(function(r,i){return mkrow(r,i,false);}): [{"Nota":"Nessun incarico"}]);XLSX.utils.book_append_sheet(wb,ws,op.slice(0,31));});XLSX.writeFile(wb,"lista_operatori_"+todayFile()+".xlsx");}
-function expAdmin(){var rows=[];S.operatorList.filter(Boolean).forEach(function(op){dailyList(op).forEach(function(r,i){rows.push(mkrow(r,i,true));});});var ws=XLSX.utils.json_to_sheet(rows.length?rows:[{"Nota":"Nessun incarico"}]),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Recap Admin");XLSX.writeFile(wb,"recap_admin_"+todayFile()+".xlsx");}
-function expLavorati(op){var items=Object.values(DONE).filter(function(d){return op==="__admin__"?true:d.operatore===op;});var rows=items.map(function(d,i){return{"#":i+1,"ID":d.id,"Company":d.company||"","Operatore":d.operatore||"","Ora":d.ts,"Scadenza (gg)":d.scadenza,"N. Chiamate":d.chiamate,"Stato":d.stato};});var ws=XLSX.utils.json_to_sheet(rows.length?rows:[{"Nota":"Nessun incarico lavorato"}]),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Lavorati");XLSX.writeFile(wb,"lavorati_"+(op==="__admin__"?"tutti":op.replace(/\s+/g,"_"))+"_"+todayFile()+".xlsx");}
-
-// ─── EVENTI ───────────────────────────────────────────────────────────────────
-document.getElementById("btn-role-op").addEventListener("click",function(){startWaiting();});
-document.getElementById("btn-role-admin").addEventListener("click",function(){showScreen("screen-upload");});
-document.getElementById("btn-wait-back").addEventListener("click",function(){stopWaiting();showScreen("screen-role");});
-document.getElementById("btn-back-ops").addEventListener("click",function(){showScreen("screen-role");});
-document.getElementById("btn-back-upload").addEventListener("click",function(){showScreen("screen-role");});
-
-var dz=document.getElementById("drop-zone");
-dz.addEventListener("dragover",function(e){e.preventDefault();dz.classList.add("over");});
-dz.addEventListener("dragleave",function(){dz.classList.remove("over");});
-dz.addEventListener("drop",function(e){e.preventDefault();dz.classList.remove("over");var f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)handleAdminFile(f);});
-document.getElementById("file-input").addEventListener("change",function(e){var f=e.target.files&&e.target.files[0];if(f)handleAdminFile(f);e.target.value="";});
-
-function handleAdminFile(file){
-  var reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      var wb=XLSX.read(e.target.result,{type:"array"});
-      var raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
-      var prog=document.getElementById("upload-progress");
-      var txt=document.getElementById("upload-progress-txt");
-      prog.style.display="flex";
-      txt.textContent="Lettura file completata. Invio a Google Drive in corso...";
-      // Prima invia a Drive, poi processa
-      uploadToDrive(file,file.name,function(ok){
-        if(ok){
-          txt.textContent="✓ File inviato a Drive! Gli operatori possono accedere.";
-          setTimeout(function(){prog.style.display="none";},3000);
-        } else {
-          txt.textContent="⚠️ Invio a Drive fallito. Gli operatori non potranno accedere. Riprova.";
-          // Non bloccare l'admin comunque
-        }
-        processFile(raw,file.name,false);
-      });
-    }catch(err){alert("Errore nel leggere il file: "+err.message);}
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-document.getElementById("btn-confirm").addEventListener("click",function(){
-  var typed=pnames(document.getElementById("ops-input").value);
-  if(!typed.length){document.getElementById("ops-err").style.display="block";return;}
-  S.operatorList=typed;
-  if(_pendingRows){applyData(_pendingRows,typed);enterApp("__admin__");}
-});
-document.getElementById("ops-input").addEventListener("input",function(){
-  var names=pnames(this.value);
-  document.getElementById("ops-preview").innerHTML=names.map(function(n){return'<span class="tag" style="background:#EEEDFE;color:#533AB7;border-color:#AFA9EC">'+esc(n)+"</span>";}).join("");
-  document.getElementById("ops-err").style.display="none";
-});
-
-document.querySelectorAll(".ntab").forEach(function(t){t.addEventListener("click",function(){switchView(t.dataset.v);});});
-document.getElementById("f-status").addEventListener("change",function(e){S.fStatus=e.target.value;S.page=1;renderDash();});
-document.getElementById("f-op").addEventListener("change",function(e){S.fOp=e.target.value;S.page=1;renderDash();});
-document.getElementById("f-company").addEventListener("input",function(e){S.fCompany=e.target.value;S.page=1;renderDash();});
-document.getElementById("btn-reset").addEventListener("click",function(){S.fStatus="tutti";S.fOp="tutti";S.fCompany="";S.page=1;renderDash();syncUI();});
-document.getElementById("banner-close").addEventListener("click",function(){document.getElementById("banner").style.display="none";});
-document.getElementById("btn-change").addEventListener("click",function(){askSave(function(){DONE={};showScreen("screen-role");});});
-document.getElementById("btn-newfile").addEventListener("click",function(){askSave(function(){DONE={};showScreen("screen-upload");});});
-</script>
-</body>
-</html>
+function mkrow(r,i,inclOp){var n=NOTES[r.id]||{},row={"#":i+1,"ID":r.id,"Company":r.com
