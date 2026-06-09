@@ -8,36 +8,30 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;background:#faf9f7;color:#1a1a1a;font-size:14px}
-.mono{font-family:'Courier New',Courier,monospace}
 .screen{display:none}.screen.active{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
 #screen-main.active{display:block;min-height:auto}
 .box{max-width:440px;width:100%;text-align:center}
 .box h1{font-size:26px;font-weight:700;margin-bottom:8px}
 .box p{color:#888;font-size:14px;margin-bottom:24px}
-.role-grid{display:flex;flex-direction:column;gap:12px;margin-top:8px}
-.rbtn{padding:16px 20px;border-radius:12px;border:2px solid #e8e4dc;background:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;color:#1a1a1a;text-align:left;display:flex;align-items:center;gap:14px;transition:border-color .15s;width:100%}
+.role-grid{display:flex;flex-direction:column;gap:12px}
+.rbtn{padding:16px 20px;border-radius:12px;border:2px solid #e8e4dc;background:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;color:#1a1a1a;text-align:left;display:flex;align-items:center;gap:14px;width:100%;transition:border-color .15s}
 .rbtn:hover{border-color:#533AB7}.rbtn.dark{background:#1a1a1a;color:#fff;border-color:#1a1a1a}.rbtn.dark:hover{background:#333}
-.ava{width:40px;height:40px;border-radius:50%;background:#e8e4dc;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.rbtn.dark .ava{background:rgba(255,255,255,.15)}
 .rbtn.saved{border-color:#533AB7}.rbtn.saved .ava{background:#533AB7;color:#fff}
+.ava{width:40px;height:40px;border-radius:50%;background:#e8e4dc;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.rbtn.dark .ava{background:rgba(255,255,255,.15)}
 .back-btn{background:none;border:none;color:#888;font-size:13px;cursor:pointer;font-family:inherit;margin-bottom:16px;display:flex;align-items:center;gap:6px;padding:0}
 .back-btn:hover{color:#333}
-/* waiting */
 .wait-box{max-width:400px;width:100%;text-align:center}
 .wait-box h2{font-size:22px;font-weight:700;margin-bottom:10px}
-.wait-box p{color:#888;font-size:14px;margin-bottom:24px}
+.wait-box p{color:#888;font-size:14px;margin-bottom:20px}
 .spinner{width:40px;height:40px;border:3px solid #e8e4dc;border-top-color:#533AB7;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.wait-status{font-size:13px;color:#aaa;margin-bottom:16px}
-.wait-retry{font-size:12px;color:#aaa}
-/* upload */
+.wait-status{font-size:13px;color:#555;margin-bottom:8px}
+.wait-retry{font-size:12px;color:#aaa;margin-bottom:16px}
 .drop-zone{display:block;border:2px dashed #d4cfc6;border-radius:16px;padding:36px 32px;cursor:pointer;background:#fff;transition:all .2s;margin-bottom:12px}
 .drop-zone:hover,.drop-zone.over{border-color:#639922;background:#f0f9e6}
 .hint{font-size:12px;color:#bbb;margin-top:8px}
-/* upload progress */
-.upload-progress{background:#EEEDFE;border:1px solid #AFA9EC;border-radius:10px;padding:12px 16px;margin-top:12px;font-size:13px;color:#533AB7;display:none;align-items:center;gap:10px}
-.upload-progress .mini-spin{width:16px;height:16px;border:2px solid #AFA9EC;border-top-color:#533AB7;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
-/* setup */
+.drive-tip{background:#f0f9e6;border:1px solid #C0DD97;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#3B6D11;text-align:left}
 .setup-box{max-width:540px;width:100%}
 .setup-box h1{font-size:22px;font-weight:700;margin-bottom:8px}
 .card{background:#fff;border:1px solid #e8e4dc;border-radius:12px;padding:14px 16px;margin-bottom:14px}
@@ -48,7 +42,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Ar
 .err{color:#A32D2D;font-size:12px;margin-top:6px;display:none}
 .btn-dark{background:#1a1a1a;color:#fff;border:none;width:100%;padding:12px;font-size:14px;border-radius:10px;font-family:inherit;cursor:pointer;font-weight:600;margin-top:4px}
 .btn-dark:hover{background:#333}
-/* header */
 .header{background:#1a1a1a;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .h-left{display:flex;align-items:center;gap:12px}
 .h-title{color:#fff;font-weight:700;font-size:16px}
@@ -56,16 +49,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Ar
 .h-right{display:flex;gap:8px}
 .ghost-btn{background:transparent;color:#aaa;border:1px solid #444;padding:6px 12px;border-radius:8px;font-size:12px;font-family:inherit;cursor:pointer;font-weight:600}
 .ghost-btn:hover{color:#fff;border-color:#666}
-/* nav */
 .nav{background:#fff;border-bottom:2px solid #e8e4dc;padding:0 24px;display:flex;align-items:center}
 .ntab{padding:12px 20px;font-size:13px;font-weight:600;color:#888;cursor:pointer;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:none;font-family:inherit}
 .ntab.active{color:#1a1a1a;border-bottom-color:#1a1a1a}
-/* banner */
 .banner{background:#EEEDFE;border-bottom:1px solid #AFA9EC;padding:10px 24px;display:flex;align-items:center;gap:10px;font-size:13px;color:#533AB7}
 .bclose{margin-left:auto;background:none;border:none;color:#AFA9EC;cursor:pointer;font-size:18px}
-/* views */
 .view{display:none}.view.active{display:block}
-/* stats */
 .stats-grid{padding:16px 24px 0;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 .scard{background:#fff;border-radius:12px;padding:14px 16px;border:2px solid #e8e4dc;cursor:pointer}
 .scard-label{font-size:11px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
@@ -81,13 +70,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Ar
 .opc-fill{height:4px;background:#639922;border-radius:2px}
 .opc.active .opc-fill{background:#533AB7}
 .opc-cnt{font-size:11px;color:#888}
-/* filters */
 .filters{padding:12px 24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .filters select,.filters input{padding:7px 12px;border-radius:8px;border:1px solid #d4cfc6;font-size:13px;font-family:inherit;background:#fff;color:#333}
 .filters input{min-width:180px}
 .rcnt{margin-left:auto;font-size:12px;color:#aaa}
 .rbtn-sm{padding:7px 12px;border-radius:8px;border:1px solid #d4cfc6;font-size:12px;font-family:inherit;background:#fff;color:#888;cursor:pointer}
-/* table */
 .twrap{margin:0 24px 24px;background:#fff;border-radius:14px;border:1px solid #e8e4dc;overflow:hidden}
 .tscroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
@@ -103,7 +90,6 @@ tr.r-em{background:#FEE2E2}tr.r-urg{background:#fffafa}tr.r-mai{background:#f8f6
 .pag button{padding:4px 10px;border-radius:6px;border:1px solid #d4cfc6;background:#fff;cursor:pointer;font-size:12px;font-family:inherit}
 .pag button:disabled{opacity:.4;cursor:default}
 .pag span{font-size:13px;color:#888;padding:0 8px}
-/* lista */
 .lwrap{padding:0 24px 24px}
 .ltop{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px;flex-wrap:wrap;gap:10px}
 .ltop h2{font-size:18px;font-weight:700}
@@ -135,9 +121,7 @@ tr.r-em{background:#FEE2E2}tr.r-urg{background:#fffafa}tr.r-mai{background:#f8f6
 .btn-n{padding:3px 8px;border-radius:6px;border:1px solid #d4cfc6;background:#fff;color:#555;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600}
 .btn-n.on{background:#EEEDFE;border-color:#AFA9EC;color:#533AB7}
 .btn-done{padding:4px 10px;border-radius:6px;border:1px solid #C0DD97;background:#EAF3DE;color:#3B6D11;font-size:11px;cursor:pointer;font-family:inherit;font-weight:700}
-.btn-done:hover{background:#d4edba}
 .btn-undone{padding:4px 10px;border-radius:6px;border:1px solid #d4cfc6;background:#fff;color:#888;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600}
-/* note */
 .npanel{border-top:2px solid #e8e4dc}
 .nphdr{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;cursor:pointer;user-select:none}
 .nphdr h3{font-size:14px;font-weight:700;margin:0}
@@ -163,7 +147,6 @@ tr.r-em{background:#FEE2E2}tr.r-urg{background:#fffafa}tr.r-mai{background:#f8f6
 .cd.he{border-color:#533AB7;background:#EEEDFE}.cd.ct.he{background:#533AB7}
 .cev{font-size:9px;background:#533AB7;color:#fff;border-radius:3px;padding:1px 3px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cev.ct{background:#A32D2D}
-/* modal */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
 .modal-box{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:460px}
@@ -180,57 +163,33 @@ tr.r-em{background:#FEE2E2}tr.r-urg{background:#fffafa}tr.r-mai{background:#f8f6
 </head>
 <body>
 
-<!-- S1: SCEGLI RUOLO (prima schermata) -->
-<div id="screen-role" class="screen active">
-  <div class="box">
-    <div style="font-size:48px;margin-bottom:16px">📋</div>
-    <h1>Gestione Incarichi</h1>
-    <p>Seleziona il tuo ruolo per accedere</p>
-    <div class="role-grid">
-      <button class="rbtn" id="btn-role-op">
-        <div class="ava">👤</div>
-        <div style="flex:1">
-          <div>Sono un operatore</div>
-          <div style="font-size:12px;font-weight:400;color:#888;margin-top:2px">Accedi alla tua lista del giorno</div>
-        </div>
-      </button>
-      <button class="rbtn dark" id="btn-role-admin">
-        <div class="ava">👑</div>
-        <div style="flex:1">
-          <div>Sono l'admin</div>
-          <div style="font-size:12px;font-weight:400;color:#aaa;margin-top:2px">Carica file e gestisci tutto</div>
-        </div>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- S1b: RIPRENDI SESSIONE -->
+<!-- S0: RIPRENDI SESSIONE -->
 <div id="screen-resume" class="screen">
   <div class="box">
     <div style="font-size:48px;margin-bottom:16px">💾</div>
     <h1>Sessione salvata</h1>
     <p id="resume-info" style="margin-bottom:28px"></p>
     <div class="role-grid">
-      <button class="rbtn" id="btn-resume">
-        <div class="ava">▶️</div>
-        <div style="flex:1">
-          <div>Riprendi sessione</div>
-          <div style="font-size:12px;font-weight:400;color:#888;margin-top:2px">Continua da dove eri rimasto</div>
-        </div>
-      </button>
-      <button class="rbtn dark" id="btn-resume-new">
-        <div class="ava">🔄</div>
-        <div style="flex:1">
-          <div>Inizia da capo</div>
-          <div style="font-size:12px;font-weight:400;color:#aaa;margin-top:2px">Cancella la sessione e ricomincia</div>
-        </div>
-      </button>
+      <button class="rbtn" id="btn-resume"><div class="ava">▶️</div><div style="flex:1"><div>Riprendi sessione</div><div style="font-size:12px;font-weight:400;color:#888;margin-top:2px">Continua da dove eri rimasto</div></div></button>
+      <button class="rbtn dark" id="btn-resume-new"><div class="ava">🔄</div><div style="flex:1"><div>Inizia da capo</div><div style="font-size:12px;font-weight:400;color:#aaa;margin-top:2px">Cancella sessione e ricomincia</div></div></button>
     </div>
   </div>
 </div>
 
-<!-- S2: OPERATORE — ATTESA LISTA -->
+<!-- S1: SCEGLI RUOLO -->
+<div id="screen-role" class="screen active">
+  <div class="box">
+    <div style="font-size:48px;margin-bottom:16px">📋</div>
+    <h1>Gestione Incarichi</h1>
+    <p>Seleziona il tuo ruolo per accedere</p>
+    <div class="role-grid">
+      <button class="rbtn" id="btn-role-op"><div class="ava">👤</div><div style="flex:1"><div>Sono un operatore</div><div style="font-size:12px;font-weight:400;color:#888;margin-top:2px">Accedi alla tua lista del giorno</div></div></button>
+      <button class="rbtn dark" id="btn-role-admin"><div class="ava">👑</div><div style="flex:1"><div>Sono l'admin</div><div style="font-size:12px;font-weight:400;color:#aaa;margin-top:2px">Carica file e gestisci tutto</div></div></button>
+    </div>
+  </div>
+</div>
+
+<!-- S2: ATTESA DRIVE (operatore) -->
 <div id="screen-wait" class="screen">
   <div class="wait-box">
     <div class="spinner"></div>
@@ -242,53 +201,43 @@ tr.r-em{background:#FEE2E2}tr.r-urg{background:#fffafa}tr.r-mai{background:#f8f6
   </div>
 </div>
 
-<!-- S3: OPERATORE — SCEGLI NOME -->
+<!-- S3: SCEGLI NOME (operatore) -->
 <div id="screen-ops" class="screen">
   <div class="box">
     <button class="back-btn" id="btn-back-ops">← Torna indietro</button>
     <div style="font-size:44px;margin-bottom:12px">👤</div>
     <h1>Chi sei?</h1>
-    <p>Seleziona il tuo nome per accedere alla lista</p>
+    <p>Seleziona il tuo nome</p>
     <div class="role-grid" id="ops-grid" style="margin-top:20px"></div>
     <div style="font-size:12px;color:#aaa;margin-top:8px">Il tuo nome viene ricordato su questo PC</div>
   </div>
 </div>
 
-<!-- S4: ADMIN — CARICA FILE -->
+<!-- S4: CARICA FILE (admin) -->
 <div id="screen-upload" class="screen">
   <div class="box">
     <button class="back-btn" id="btn-back-upload">← Torna indietro</button>
     <div style="font-size:44px;margin-bottom:12px">📁</div>
     <h1>Carica il file</h1>
-    <p>Carica il file Excel degli incarichi di oggi.</p>
-    <div style="background:#f0f9e6;border:1px solid #C0DD97;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#3B6D11;text-align:left">
-      📌 <strong>Ricorda:</strong> carica anche il file su Google Drive in modo che gli operatori possano accedervi automaticamente.
-    </div>
+    <p style="margin-bottom:16px">Carica il file Excel degli incarichi di oggi.</p>
+    <div class="drive-tip">📌 <strong>Ricorda:</strong> carica anche il file su Google Drive (sovrascrivendo quello precedente) affinché gli operatori possano scaricarlo automaticamente.</div>
     <label class="drop-zone" id="drop-zone">
       <div style="font-size:32px;margin-bottom:12px">⬆️</div>
       <strong style="display:block;font-weight:600;color:#333;margin-bottom:4px">Trascina qui il file Excel</strong>
       <span style="color:#aaa;font-size:13px">oppure clicca per selezionarlo</span>
       <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none">
     </label>
-    <div class="upload-progress" id="upload-progress">
-      <div class="mini-spin"></div>
-      <span id="upload-progress-txt">Invio a Google Drive in corso...</span>
-    </div>
     <p class="hint">Colonne: ID · In gestione da · Giorni alla scadenza · nunero chiamate · Ultima chiata · Gestito da · Company</p>
   </div>
 </div>
 
-<!-- S5: ADMIN — CONFIGURA OPERATORI (solo prima volta) -->
+<!-- S5: CONFIGURA OPERATORI (prima volta) -->
 <div id="screen-setup" class="screen">
   <div class="setup-box">
     <div style="margin-bottom:20px">
       <div style="font-size:13px;color:#888;margin-bottom:4px;font-family:'Courier New',monospace" id="setup-fname"></div>
       <h1>Configura gli operatori</h1>
       <p style="color:#888;font-size:14px;margin-top:6px" id="setup-sub"></p>
-    </div>
-    <div class="card" id="ex-ops-card" style="display:none">
-      <div class="card-title" id="ex-ops-title"></div>
-      <div class="tags-row" id="ex-ops-tags"></div>
     </div>
     <div class="card">
       <div class="card-title">Inserisci i nomi degli operatori</div>
@@ -301,7 +250,7 @@ tr.r-em{background:#FEE2E2}tr.r-urg{background:#fffafa}tr.r-mai{background:#f8f6
   </div>
 </div>
 
-<!-- S6: APP PRINCIPALE -->
+<!-- S6: APP -->
 <div id="screen-main" class="screen">
   <div class="header">
     <div class="h-left">
@@ -346,20 +295,14 @@ tr.r-em{background:#FEE2E2}tr.r-urg{background:#fffafa}tr.r-mai{background:#f8f6
   </div>
   <div class="view active" id="view-lista">
     <div class="lwrap">
-      <div class="ltop">
-        <div><h2>Lista del giorno</h2><div style="font-size:13px;color:#888;margin-top:2px" id="ldate"></div></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap" id="lbtns"></div>
-      </div>
+      <div class="ltop"><div><h2>Lista del giorno</h2><div style="font-size:13px;color:#888;margin-top:2px" id="ldate"></div></div><div style="display:flex;gap:8px;flex-wrap:wrap" id="lbtns"></div></div>
       <div class="ltabs" id="ltabs"></div>
       <div id="lcontent"></div>
     </div>
   </div>
   <div class="view" id="view-lavorati">
     <div class="lwrap">
-      <div class="ltop">
-        <div><h2>✅ Lavorati oggi</h2><div style="font-size:13px;color:#888;margin-top:2px" id="lav-date"></div></div>
-        <div style="display:flex;gap:8px" id="lav-btns"></div>
-      </div>
+      <div class="ltop"><div><h2>✅ Lavorati oggi</h2><div style="font-size:13px;color:#888;margin-top:2px" id="lav-date"></div></div><div style="display:flex;gap:8px" id="lav-btns"></div></div>
       <div class="ltabs" id="lav-tabs"></div>
       <div id="lav-content"></div>
     </div>
@@ -371,7 +314,7 @@ tr.r-em{background:#FEE2E2}tr.r-urg{background:#fffafa}tr.r-mai{background:#f8f6
   <div class="modal-box" style="max-width:400px;text-align:center">
     <div style="font-size:36px;margin-bottom:12px">💾</div>
     <h3 style="margin-bottom:8px">Salvare la sessione?</h3>
-    <p style="font-size:13px;color:#888;margin-bottom:20px">Hai degli incarichi marcati come "Done".<br>Vuoi salvare i progressi prima di uscire?</p>
+    <p style="font-size:13px;color:#888;margin-bottom:20px">Hai degli incarichi marcati come Done.<br>Vuoi salvare i progressi prima di uscire?</p>
     <div style="display:flex;gap:10px;justify-content:center">
       <button class="btn-mc" id="sess-discard">Esci senza salvare</button>
       <button class="btn-ms" id="sess-save">Salva e esci</button>
@@ -380,7 +323,7 @@ tr.r-em{background:#FEE2E2}tr.r-urg{background:#fffafa}tr.r-mai{background:#f8f6
 </div>
 
 <!-- MODAL NOTA -->
-<div class="modal-bg" id="modal-bg">
+<div class="modal-bg" id="modal-nota">
   <div class="modal-box">
     <h3 id="m-title"></h3>
     <div class="msub" id="m-sub"></div>
