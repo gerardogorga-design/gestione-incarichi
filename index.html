@@ -426,6 +426,32 @@ function getSavedOp(){ return ls(OP_KEY); }
 function saveOp(op){ lsSet(OP_KEY,op); }
 loadStorage();
 
+// Ripristina sessione salvata automaticamente all'avvio
+(function(){
+  var sess=loadSession();
+  if(sess&&sess.data&&sess.data.length&&sess.currentOp){
+    S.data=sess.data;
+    S.fileName=sess.fileName||"";
+    S.operatorList=sess.operatorList||[];
+    if(sess.done)DONE=sess.done;
+    if(sess.listaTab)S.listaTab=sess.listaTab;
+    // Mostra banner di ripristino
+    setTimeout(function(){
+      showScreen("screen-main");
+      var isAdmin=(sess.currentOp==="__admin__");
+      S.currentOp=sess.currentOp;
+      document.getElementById("h-op").textContent=isAdmin?"Admin":sess.currentOp;
+      document.getElementById("tab-dash").style.display=isAdmin?"":"none";
+      document.getElementById("btn-newfile").style.display=isAdmin?"":"none";
+      rebuildOpFilter();
+      document.getElementById("banner").style.display="flex";
+      document.getElementById("banner-txt").innerHTML="Sessione ripristinata — <strong>"+S.data.length.toLocaleString("it")+" incarichi</strong> caricati.&nbsp;&nbsp;<button onclick='clearSession();location.reload()' style='background:none;border:none;color:#533AB7;cursor:pointer;font-size:13px;text-decoration:underline'>Ricomincia da capo</button>";
+      if(isAdmin){S.listaTab=S.listaTab||"__admin__";switchView("dashboard");}
+      else{S.listaTab=S.listaTab||sess.currentOp;switchView("lista");}
+    },0);
+  }
+})();
+
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 function daysSince(v){if(!v)return 999;var d=typeof v==="number"?new Date(Math.round((v-25569)*864e5)):new Date(v);if(isNaN(d.getTime()))return 999;return Math.floor((Date.now()-d.getTime())/864e5);}
 function fmtDate(v){if(!v)return"—";var d=typeof v==="number"?new Date(Math.round((v-25569)*864e5)):new Date(v);if(isNaN(d.getTime()))return String(v);return d.toLocaleDateString("it-IT");}
@@ -454,10 +480,32 @@ function markDone(id){
 function unmarkDone(id){delete DONE[id];if(S.view==="lavorati")renderLavorati();else if(S.view==="lista")renderLista();else renderDash();}
 
 // ─── SESSION ──────────────────────────────────────────────────────────────────
-function saveSession(){ lsSet(SESSION_KEY,JSON.stringify({currentOp:S.currentOp,operatorList:S.operatorList,done:DONE,view:S.view,listaTab:S.listaTab})); }
+function saveSession(){
+  lsSet(SESSION_KEY,JSON.stringify({
+    currentOp:S.currentOp,
+    operatorList:S.operatorList,
+    done:DONE,
+    view:S.view,
+    listaTab:S.listaTab,
+    data:S.data,
+    fileName:S.fileName,
+  }));
+}
 function loadSession(){ try{return JSON.parse(ls(SESSION_KEY)||"null");}catch(e){return null;} }
 function clearSession(){ lsDel(SESSION_KEY); }
-function restoreSession(){ var sess=loadSession();if(!sess||!S.data.length)return false;if(sess.done)DONE=sess.done;if(sess.listaTab)S.listaTab=sess.listaTab;return true; }
+function restoreSession(){
+  var sess=loadSession();
+  if(!sess)return false;
+  // Se i dati non sono in memoria ma sono in sessione, ripristinali
+  if(!S.data.length&&sess.data&&sess.data.length){
+    S.data=sess.data;
+    S.fileName=sess.fileName||"";
+    S.operatorList=sess.operatorList||[];
+  }
+  if(sess.done)DONE=sess.done;
+  if(sess.listaTab)S.listaTab=sess.listaTab;
+  return true;
+}
 
 function askSave(cb){
   if(!Object.keys(DONE).length){cb();return;}
