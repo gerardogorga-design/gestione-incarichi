@@ -235,21 +235,27 @@ function stopWaiting(){if(_retryTimer){clearInterval(_retryTimer);_retryTimer=nu
 
 function tryLoadDrive(){
   _retryCount++;
-  setWaitStatus("Tentativo "+_retryCount+" — connessione a Google Drive...", "");
-  fetch(DRIVE_URL)
-    .then(function(r){return r.json();})
-    .then(function(json){
+  setWaitStatus("Tentativo "+_retryCount+" — connessione a Google Drive...","");
+  fetch(DRIVE_URL,{method:"GET",mode:"cors"})
+    .then(function(r){
+      setWaitStatus("Risposta ricevuta (status "+r.status+")...","");
+      return r.text();
+    })
+    .then(function(txt){
+      var json;
+      try{json=JSON.parse(txt);}catch(e){startRetry("Risposta non valida: "+txt.slice(0,80));return;}
       if(json.error){
         var msg=json.error.indexOf("non ancora")>=0?"L'admin non ha ancora caricato il file di oggi.":"Errore Drive: "+json.error;
         startRetry(msg);return;
       }
+      if(!json.data){startRetry("Risposta Drive senza dati: "+JSON.stringify(json).slice(0,80));return;}
       setWaitStatus("✓ File trovato! Caricamento in corso...","");
       var bin=atob(json.data),bytes=new Uint8Array(bin.length);
       for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
       var blob=new Blob([bytes.buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
       parseFile(new File([blob],json.fileName||"incarichi.xlsx"),true);
     })
-    .catch(function(err){startRetry("Errore connessione: "+err.message);});
+    .catch(function(err){startRetry("Errore fetch: "+err.message+" ("+err.name+")");});
 }
 
 function startRetry(msg){
