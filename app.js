@@ -217,10 +217,31 @@ function handleAdminFile(file){
       var wb=XLSX.read(e.target.result,{type:"array"});
       var raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
       ASSIGNMENTS={};saveAssignments();clearSession();DONE={};
+      // Invia il file a Drive con no-cors (fire and forget)
+      uploadToDrive(file);
       processFile(raw,file.name,false);
     }catch(err){alert("Errore: "+err.message);}
   };
   reader.readAsArrayBuffer(file);
+}
+
+function uploadToDrive(file){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var b64=e.target.result.split(",")[1];
+    // no-cors: il browser invia i dati ma non legge la risposta (aggira CORS)
+    fetch(DRIVE_URL,{
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({data:b64,fileName:file.name})
+    }).then(function(){
+      console.log("File inviato a Drive (no-cors).");
+    }).catch(function(err){
+      console.warn("Invio Drive fallito:",err);
+    });
+  };
+  reader.readAsDataURL(file);
 }
 
 // ─── DRIVE ───────────────────────────────────────────────────────────────────
