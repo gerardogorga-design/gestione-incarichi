@@ -1,5 +1,4 @@
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-var DRIVE_URL = "https://script.google.com/macros/s/AKfycbwykGh50QuzrF0pDcf-9uLt8yq3GvKi_Ev6ibqCouToBtVMHPAvC6vHpWA1-I73ws2rWQ/exec";
 var DAYS_BETWEEN = 3, PAGE_SIZE = 50;
 var NOTE_KEY = "gi_notes_v3", OP_KEY = "gi_op_v3", ASSIGN_KEY = "gi_assign_v3", SESSION_KEY = "gi_session_v3";
 
@@ -217,85 +216,59 @@ function handleAdminFile(file){
       var wb=XLSX.read(e.target.result,{type:"array"});
       var raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
       ASSIGNMENTS={};saveAssignments();clearSession();DONE={};
-      // Invia il file a Drive con no-cors (fire and forget)
-      uploadToDrive(file);
       processFile(raw,file.name,false);
     }catch(err){alert("Errore: "+err.message);}
   };
   reader.readAsArrayBuffer(file);
 }
 
-function uploadToDrive(file){
+
+
+// ─── OPERATORE: carica il proprio file ────────────────────────────────────────
+function handleOpFile(file){
   var reader=new FileReader();
   reader.onload=function(e){
-    var b64=e.target.result.split(",")[1];
-    // no-cors: il browser invia i dati ma non legge la risposta (aggira CORS)
-    fetch(DRIVE_URL,{
-      method:"POST",
-      mode:"no-cors",
-      headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify({data:b64,fileName:file.name})
-    }).then(function(){
-      console.log("File inviato a Drive (no-cors).");
-    }).catch(function(err){
-      console.warn("Invio Drive fallito:",err);
-    });
+    try{
+      var wb=XLSX.read(e.target.result,{type:"array"});
+      var raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+      processOpFile(raw,file.name);
+    }catch(err){alert("Errore nel leggere il file: "+err.message);}
   };
-  reader.readAsDataURL(file);
+  reader.readAsArrayBuffer(file);
 }
 
-// ─── DRIVE ───────────────────────────────────────────────────────────────────
-var _retryCount=0,_retryTimer=null;
-
-function startWaiting(){
-  showScreen("screen-wait");
-  _retryCount=0;
-  tryLoadDrive();
-}
-function stopWaiting(){if(_retryTimer){clearInterval(_retryTimer);_retryTimer=null;}}
-
-function tryLoadDrive(){
-  _retryCount++;
-  setWaitStatus("Tentativo "+_retryCount+" — connessione a Google Drive...","");
-  fetch(DRIVE_URL,{method:"GET",mode:"cors"})
-    .then(function(r){
-      setWaitStatus("Risposta ricevuta (status "+r.status+")...","");
-      return r.text();
-    })
-    .then(function(txt){
-      var json;
-      try{json=JSON.parse(txt);}catch(e){startRetry("Risposta non valida: "+txt.slice(0,80));return;}
-      if(json.error){
-        var msg=json.error.indexOf("non ancora")>=0?"L'admin non ha ancora caricato il file di oggi.":"Errore Drive: "+json.error;
-        startRetry(msg);return;
-      }
-      if(!json.data){startRetry("Risposta Drive senza dati: "+JSON.stringify(json).slice(0,80));return;}
-      setWaitStatus("✓ File trovato! Caricamento in corso...","");
-      var bin=atob(json.data),bytes=new Uint8Array(bin.length);
-      for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-      var blob=new Blob([bytes.buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
-      parseFile(new File([blob],json.fileName||"incarichi.xlsx"),true);
-    })
-    .catch(function(err){startRetry("Errore fetch: "+err.message+" ("+err.name+")");});
-}
-
-function startRetry(msg){
-  var sec=10;
-  setWaitStatus(msg,"Nuovo tentativo tra "+sec+" secondi...");
-  _retryTimer=setInterval(function(){
-    sec--;
-    if(sec<=0){clearInterval(_retryTimer);tryLoadDrive();}
-    else document.getElementById("wait-retry").textContent="Nuovo tentativo tra "+sec+" secondi...";
-  },1000);
-}
-
-function setWaitStatus(msg,retry){
-  var s=document.getElementById("wait-status"),r=document.getElementById("wait-retry");
-  if(s)s.textContent=msg;if(r)r.textContent=retry;
+function processOpFile(raw,fileName){
+  // Legge il file dell'operatore: tutte le righe sono già sue
+  S.data=raw.map(function(r,i){
+    var row={_idx:i,id:String(gcol(r,"id")||("INC-"+(i+1))),
+      giorni_gestione:gcol(r,"giorni_gestione"),giorni_scadenza:gcol(r,"giorni_scadenza"),
+      n_chiamate:gcol(r,"n_chiamate"),data_ultima:gcol(r,"data_ultima"),
+      operatore:gcol(r,"operatore"),company:gcol(r,"company"),
+      _auto_assigned:false,_status:"",_priority:0};
+    row._status=gstatus(row);row._priority=gprio(row);
+    return row;
+  });
+  S.fileName=fileName;
+  // Il nome operatore è quello nella colonna "Gestito da"
+  var ops=[],seen={};
+  S.data.forEach(function(r){if(r.operatore&&!seen[r.operatore]){seen[r.operatore]=1;ops.push(r.operatore);}});
+  if(ops.length===1){
+    // Un solo operatore nel file: entra direttamente
+    S.operatorList=ops;
+    S.currentOp=ops[0];
+    saveOp(ops[0]);
+    enterApp(ops[0]);
+  } else if(ops.length>1){
+    // Più operatori: fai scegliere
+    S.operatorList=ops;
+    showOpsScreen();
+  } else {
+    alert("Il file non contiene operatori nella colonna 'Gestito da'.");
+  }
 }
 
 // ─── SCREENS ─────────────────────────────────────────────────────────────────
-var SCREENS=["screen-resume","screen-role","screen-wait","screen-ops","screen-upload","screen-setup","screen-main"];
+var SCREENS=["screen-resume","screen-role","screen-op-upload","screen-ops","screen-upload","screen-setup","screen-main"];
 function showScreen(id){
   SCREENS.forEach(function(s){document.getElementById(s).classList.remove("active");});
   document.getElementById(id).classList.add("active");
@@ -304,7 +277,6 @@ function showModal(id){document.getElementById(id).classList.add("open");}
 function hideModal(id){document.getElementById(id).classList.remove("open");}
 
 function showOpsScreen(){
-  stopWaiting();
   var ops=S.operatorList.filter(Boolean),savedOp=getSavedOp();
   document.getElementById("ops-grid").innerHTML=ops.map(function(op){
     var initials=op.split(" ").map(function(w){return w[0]||"";}).slice(0,2).join("").toUpperCase();
@@ -319,7 +291,6 @@ function showOpsScreen(){
 }
 
 function enterApp(op){
-  stopWaiting();
   S.currentOp=op;
   var isAdmin=(op==="__admin__");
   document.getElementById("h-op").textContent=isAdmin?"Admin":op;
@@ -471,9 +442,12 @@ function renderLista(){
     renderOpLista(lcontent,S.currentOp);
     return;
   }
-  lbtns.innerHTML='<button class="btn-p" id="btn-exp-adm">↓ Recap admin</button><button class="btn-g" id="btn-exp-all">↓ Tutti gli operatori</button>';
+  lbtns.innerHTML='<button class="btn-p" id="btn-exp-ops">📧 Genera file per operatori</button><button class="btn-g" id="btn-exp-adm">↓ Recap admin</button>';
+  document.getElementById("btn-exp-ops").addEventListener("click",function(){
+    expForOperators();
+    alert("Generato un file Excel per ogni operatore. Invia a ciascun operatore il suo file — lo caricherà nel tool scegliendo 'Sono un operatore'.");
+  });
   document.getElementById("btn-exp-adm").addEventListener("click",expAdmin);
-  document.getElementById("btn-exp-all").addEventListener("click",expAll);
   if(!S.listaTab)S.listaTab="__admin__";
   ltabs.innerHTML='<button class="ltab adm'+(S.listaTab==="__admin__"?" active":"")+'" data-t="__admin__">📊 Admin</button>'+ops.map(function(op){return'<button class="ltab'+(S.listaTab===op?" active":"")+'" data-t="'+esc(op)+'">'+esc(op)+' <span style="opacity:.6;font-size:11px">('+dailyList(op).length+")</span></button>";}).join("");
   ltabs.querySelectorAll(".ltab").forEach(function(t){t.addEventListener("click",function(){S.listaTab=t.dataset.t;renderLista();});});
@@ -606,17 +580,47 @@ function mkrow(r,i,inclOp){
 }
 function expOp(op){var list=dailyList(op),ws=XLSX.utils.json_to_sheet(list.map(function(r,i){return mkrow(r,i,false);})),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,op.slice(0,31));XLSX.writeFile(wb,"lista_"+op.replace(/\s+/g,"_")+"_"+todayFile()+".xlsx");}
 function expAll(){var wb=XLSX.utils.book_new();S.operatorList.filter(Boolean).forEach(function(op){var list=dailyList(op),ws=XLSX.utils.json_to_sheet(list.length?list.map(function(r,i){return mkrow(r,i,false);}): [{"Nota":"Nessun incarico"}]);XLSX.utils.book_append_sheet(wb,ws,op.slice(0,31));});XLSX.writeFile(wb,"lista_operatori_"+todayFile()+".xlsx");}
+
+// Esporta un file SEPARATO e RICARICABILE per ogni operatore (colonne originali)
+function origRow(r){
+  var row={};
+  row["ID"]=r.id;
+  row["In gestione da"]=r.giorni_gestione;
+  row["Giorni alla scadenza"]=r.giorni_scadenza;
+  row["nunero chiamate"]=r.n_chiamate;
+  row["Ultima chiata"]=r.data_ultima;
+  row["Gestito da"]=r.operatore;
+  row["Company"]=r.company;
+  return row;
+}
+function expForOperators(){
+  // Genera un file per ogni operatore, ognuno con TUTTI i suoi incarichi (non solo i chiamabili)
+  S.operatorList.filter(Boolean).forEach(function(op){
+    var rows=S.data.filter(function(r){return r.operatore===op;}).map(origRow);
+    if(!rows.length)return;
+    var ws=XLSX.utils.json_to_sheet(rows);
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,op.slice(0,31));
+    XLSX.writeFile(wb,"incarichi_"+op.replace(/\s+/g,"_")+"_"+todayFile()+".xlsx");
+  });
+}
 function expAdmin(){var rows=[];S.operatorList.filter(Boolean).forEach(function(op){dailyList(op).forEach(function(r,i){rows.push(mkrow(r,i,true));});});var ws=XLSX.utils.json_to_sheet(rows.length?rows:[{"Nota":"Nessun incarico"}]),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Recap Admin");XLSX.writeFile(wb,"recap_admin_"+todayFile()+".xlsx");}
 function expLavorati(op){var items=Object.values(DONE).filter(function(d){return op==="__admin__"?true:d.operatore===op;});var rows=items.map(function(d,i){return{"#":i+1,"ID":d.id,"Company":d.company||"","Operatore":d.operatore||"","Ora":d.ts,"Scadenza":d.scadenza,"Chiamate":d.chiamate,"Stato":d.stato};});var ws=XLSX.utils.json_to_sheet(rows.length?rows:[{"Nota":"Nessun lavorato"}]),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Lavorati");XLSX.writeFile(wb,"lavorati_"+(op==="__admin__"?"tutti":op.replace(/\s+/g,"_"))+"_"+todayFile()+".xlsx");}
 
 // ─── EVENTI STATICI ──────────────────────────────────────────────────────────
 // Ruolo
-document.getElementById("btn-role-op").addEventListener("click",function(){startWaiting();});
+document.getElementById("btn-role-op").addEventListener("click",function(){showScreen("screen-op-upload");});
 document.getElementById("btn-role-admin").addEventListener("click",function(){showScreen("screen-upload");});
 // Attesa
-document.getElementById("btn-wait-back").addEventListener("click",function(){stopWaiting();showScreen("screen-role");});
 // Ops
 document.getElementById("btn-back-ops").addEventListener("click",function(){showScreen("screen-role");});
+// Operatore: upload file proprio
+document.getElementById("btn-back-op-upload").addEventListener("click",function(){showScreen("screen-role");});
+var odz=document.getElementById("op-drop-zone");
+odz.addEventListener("dragover",function(e){e.preventDefault();odz.classList.add("over");});
+odz.addEventListener("dragleave",function(){odz.classList.remove("over");});
+odz.addEventListener("drop",function(e){e.preventDefault();odz.classList.remove("over");var f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)handleOpFile(f);});
+document.getElementById("op-file-input").addEventListener("change",function(e){var f=e.target.files&&e.target.files[0];if(f)handleOpFile(f);e.target.value="";});
 // Upload admin
 document.getElementById("btn-back-upload").addEventListener("click",function(){showScreen("screen-role");});
 var dz=document.getElementById("drop-zone");

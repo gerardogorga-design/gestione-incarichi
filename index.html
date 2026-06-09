@@ -189,15 +189,20 @@ tr.r-em{background:#FEE2E2}tr.r-urg{background:#fffafa}tr.r-mai{background:#f8f6
   </div>
 </div>
 
-<!-- S2: ATTESA DRIVE (operatore) -->
-<div id="screen-wait" class="screen">
-  <div class="wait-box">
-    <div class="spinner"></div>
-    <h2>Lista in preparazione</h2>
-    <p>Attendi che l'admin carichi il file degli incarichi di oggi.</p>
-    <div class="wait-status" id="wait-status">Connessione in corso...</div>
-    <div class="wait-retry" id="wait-retry"></div>
-    <button class="back-btn" style="margin:16px auto 0;justify-content:center" id="btn-wait-back">← Torna indietro</button>
+<!-- S2: OPERATORE CARICA LA SUA LISTA -->
+<div id="screen-op-upload" class="screen">
+  <div class="box">
+    <button class="back-btn" id="btn-back-op-upload">← Torna indietro</button>
+    <div style="font-size:44px;margin-bottom:12px">📥</div>
+    <h1>Carica la tua lista</h1>
+    <p style="margin-bottom:16px">Carica il file Excel che hai ricevuto dall'admin.</p>
+    <label class="drop-zone" id="op-drop-zone">
+      <div style="font-size:32px;margin-bottom:12px">⬆️</div>
+      <strong style="display:block;font-weight:600;color:#333;margin-bottom:4px">Trascina qui il tuo file</strong>
+      <span style="color:#aaa;font-size:13px">oppure clicca per selezionarlo</span>
+      <input type="file" id="op-file-input" accept=".xlsx,.xls,.csv" style="display:none">
+    </label>
+    <p class="hint">Il file ti viene fornito dall'admin via email o chat.</p>
   </div>
 </div>
 
